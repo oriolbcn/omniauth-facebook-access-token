@@ -1,17 +1,15 @@
-require 'oauth2'
 require 'omniauth'
 
 module OmniAuth
   module Strategies
-    class FacebookAccessToken
-      include OmniAuth::Strategy
+    class FacebookAccessToken < OmniAuth::Strategies::OAuth2
 
       option :name, 'facebook_access_token'
 
-      args [:client_id, :client_secret]
-
-      option :client_id, nil
-      option :client_secret, nil
+      # args [:client_id, :client_secret]
+      #
+      # option :client_id, nil
+      # option :client_secret, nil
 
       option :client_options, {
         :site => 'https://graph.facebook.com',
@@ -23,8 +21,6 @@ module OmniAuth
         :header_format => 'OAuth %s',
         :param_name => 'access_token'
       }
-
-      attr_accessor :access_token
 
       uid { raw_info['id'] }
 
@@ -52,24 +48,12 @@ module OmniAuth
         prune! hash
       end
 
-      credentials do
-        hash = {'token' => access_token.token}
-        hash.merge!('refresh_token' => access_token.refresh_token) if access_token.expires? && access_token.refresh_token
-        hash.merge!('expires_at' => access_token.expires_at) if access_token.expires?
-        hash.merge!('expires' => access_token.expires?)
-        hash
-      end
-
       def raw_info
         @raw_info ||= access_token.get('/me', info_options).parsed || {}
       end
 
       def info_options
         options[:info_fields] ? {:params => {:fields => options[:info_fields]}} : {}
-      end
-
-      def client
-        ::OAuth2::Client.new(options.client_id, options.client_secret, deep_symbolize(options.client_options))
       end
 
       def request_phase
